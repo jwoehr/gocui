@@ -163,6 +163,18 @@ func (g *Gui) SetViewOnTop(name string) (*View, error) {
 	return nil, ErrUnknownView
 }
 
+// SetViewOnBottom sets the given view on bottom of the existing ones.
+func (g *Gui) SetViewOnBottom(name string) (*View, error) {
+	for i, v := range g.views {
+		if v.name == name {
+			s := append(g.views[:i], g.views[i+1:]...)
+			g.views = append([]*View{v}, s...)
+			return v, nil
+		}
+	}
+	return nil, ErrUnknownView
+}
+
 // Views returns all the views in the GUI.
 func (g *Gui) Views() []*View {
 	return g.views
@@ -182,7 +194,9 @@ func (g *Gui) View(name string) (*View, error) {
 // ViewByPosition returns a pointer to a view matching the given position, or
 // error ErrUnknownView if a view in that position does not exist.
 func (g *Gui) ViewByPosition(x, y int) (*View, error) {
-	for _, v := range g.views {
+	// traverse views in reverse order checking top views first
+	for i := len(g.views); i > 0; i-- {
+		v := g.views[i-1]
 		if x > v.x0 && x < v.x1 && y > v.y0 && y < v.y1 {
 			return v, nil
 		}
