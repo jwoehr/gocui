@@ -84,8 +84,8 @@ func NewGui(mode OutputMode) (*Gui, error) {
 
 	g.maxX, g.maxY = termbox.Size()
 
-	g.BgColor, g.FgColor = ColorBlack, ColorWhite
-	g.SelBgColor, g.SelFgColor = ColorBlack, ColorWhite
+	g.BgColor, g.FgColor = ColorDefault, ColorDefault
+	g.SelBgColor, g.SelFgColor = ColorDefault, ColorDefault
 
 	return g, nil
 }
@@ -303,11 +303,12 @@ type userEvent struct {
 	f func(*Gui) error
 }
 
-// Execute executes the given function. This function can be called safely from
-// a goroutine in order to update the GUI. It is important to note that it
-// won't be executed immediately, instead it will be added to the user events
-// queue.
-func (g *Gui) Execute(f func(*Gui) error) {
+// Update executes the passed function. This method can be called safely from a
+// goroutine in order to update the GUI. It is important to note that the
+// passed function won't be executed immediately, instead it will be added to
+// the user events queue. Given that Update spawns a goroutine, the order in
+// which the user events will be handled is not guaranteed.
+func (g *Gui) Update(f func(*Gui) error) {
 	go func() { g.userEvents <- userEvent{f: f} }()
 }
 
@@ -321,7 +322,7 @@ type Manager interface {
 // The ManagerFunc type is an adapter to allow the use of ordinary functions as
 // Managers. If f is a function with the appropriate signature, ManagerFunc(f)
 // is an Manager object that calls f.
-type ManagerFunc func(v *Gui) error
+type ManagerFunc func(*Gui) error
 
 // Layout calls f(g)
 func (f ManagerFunc) Layout(g *Gui) error {
@@ -341,7 +342,7 @@ func (g *Gui) SetManager(managers ...Manager) {
 
 // SetManagerFunc sets the given manager function. It deletes all views and
 // keybindings.
-func (g *Gui) SetManagerFunc(manager func(v *Gui) error) {
+func (g *Gui) SetManagerFunc(manager func(*Gui) error) {
 	g.SetManager(ManagerFunc(manager))
 }
 
